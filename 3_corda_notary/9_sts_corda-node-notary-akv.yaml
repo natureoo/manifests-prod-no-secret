@@ -103,13 +103,13 @@ spec:
           value: /usr/lib/jvm/zulu-8-amd64
         livenessProbe:
           tcpSocket:
-            port: 10009
+            port: 10030
           initialDelaySeconds: 200
           periodSeconds: 15
           failureThreshold: 3
         readinessProbe:
           tcpSocket:
-            port: 10009
+            port: 10030
           initialDelaySeconds: 10
           periodSeconds: 3
           failureThreshold: 1
