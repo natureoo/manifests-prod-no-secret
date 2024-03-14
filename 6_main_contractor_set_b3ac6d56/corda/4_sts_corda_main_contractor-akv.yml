@@ -129,13 +129,13 @@ spec:
           runAsUser: 0
         livenessProbe:
           tcpSocket:
-            port: 10010
+            port: 10020
           initialDelaySeconds: 200
           periodSeconds: 15
           failureThreshold: 3
         readinessProbe:
           tcpSocket:
-            port: 10010
+            port: 10020
           initialDelaySeconds: 10
           periodSeconds: 3
           failureThreshold: 1

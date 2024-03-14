@@ -12,8 +12,8 @@ metadata:
 spec:
   ports:
   - name: corda-rpc
-    port: 10010
-    targetPort: 10010
+    port: 10020
+    targetPort: 10020
   selector:
     app: corda
     x500name_uuid: b3ac6d56
