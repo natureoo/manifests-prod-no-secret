@@ -1,0 +1,26 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: contractor-corda-config
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: "be160f3a-5e52-421b-a5bf-66946d6fbb79"
+    keyvaultName: "akv-topaz-elite-prod-01"
+    objects:  |
+      array:
+        - |
+          objectName: contractor-corda-config
+          objectType: secret
+        - |
+          objectName: cordappurls-txt
+          objectType: secret
+        - |
+          objectName: driverurls-txt
+          objectType: secret
+        - |
+          objectName: truststore-jks
+          objectType: secret
+    tenantId: "6ccb6c2d-50ab-4f4a-b75f-20abaef22da0"

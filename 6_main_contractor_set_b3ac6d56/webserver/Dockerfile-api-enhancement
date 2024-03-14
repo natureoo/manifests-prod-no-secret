@@ -1,0 +1,12 @@
+FROM gradle:5.6.4-jdk8 AS builder
+COPY . /usr/src/java-code/
+WORKDIR /usr/src/java-code
+ARG EXTERNAL_PAT
+ENV PACKAGE_REGISTRY_TOKEN=${EXTERNAL_PAT}
+RUN ./gradlew bootJar -i --stacktrace
+
+FROM azul/zulu-openjdk:8u382
+COPY --from=builder /usr/src/java-code/build/libs/*.jar /app/spring-boot-application.jar
+WORKDIR /app
+
+ENTRYPOINT ["java", "-Dserver.port=8080", "-Xmx2048m","-jar","/app/spring-boot-application.jar"]

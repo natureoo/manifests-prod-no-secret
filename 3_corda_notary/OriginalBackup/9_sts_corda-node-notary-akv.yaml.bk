@@ -1,0 +1,190 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    prometheus.io.scrape: "true"
+    x500name: CN=Notary, O=Doorman, L=HongKong, C=CN
+  labels:
+    app: corda
+    x500name_uuid: 7386307d
+  name: corda-node-notary
+  namespace: prod-topazelite-corda-network
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: corda
+      x500name_uuid: 7386307d
+  serviceName: ""
+  template:
+    metadata:
+      annotations:
+        prometheus.io.port: "19000"
+        prometheus.io.scrape: "true"
+        x500name: CN=Notary, O=Doorman, L=HongKong, C=CN
+      labels:
+        app: corda
+        prometheus-jmx-exporter-target: "true"
+        x500name_uuid: 7386307d
+    spec:
+      serviceAccountName: corda-node
+      priorityClassName: low-priority
+      initContainers:
+      - name: cordapp-clone
+        image: mcr.microsoft.com/azure-cli
+        imagePullPolicy: Always
+        command:
+        - /bin/bash
+        - -c
+        - /opt/scripts/download_from_azure_sa.sh /opt/cordapps-share /tmp/corda/cordappurls.txt
+          /opt/corda/cordapps && /opt/scripts/download_from_azure_sa.sh /opt/cordapps-share
+          /tmp/corda/driverurls.txt /opt/corda/drivers
+        env:
+          - name: AZURE_SA_ACCOUNT
+            valueFrom:
+              secretKeyRef:
+                name: azure-sa-credentials-csi
+                key: account
+          - name: AZURE_SA_KEY
+            valueFrom:
+              secretKeyRef:
+                name: azure-sa-credentials-csi
+                key: key
+        volumeMounts:
+        - mountPath: /opt/corda/cordapps/
+          name: cordapps
+        - mountPath: /opt/corda/drivers/
+          name: corda-drivers
+        - mountPath: /tmp/corda/cordappurls.txt
+          name: corda-config
+          subPath: cordappurls-txt
+        - mountPath: /tmp/corda/driverurls.txt
+          name: corda-config
+          subPath: driverurls-txt
+        - mountPath: /opt/cordapps-share/
+          name: cordapps-share
+        - mountPath: /opt/scripts/
+          name: init-reg-scripts
+      - name: corda-db-init-schema
+        image: corda/community:4.10-zulu-openjdk8
+        imagePullPolicy: Always
+        command:
+        - /bin/bash
+        - -c
+        - run-corda
+        securityContext:
+          runAsUser: 0
+        env:
+        - name: CORDA_ARGS
+          value: run-migration-scripts --core-schemas --app-schemas --log-to-console
+        - name: CONFIG_FOLDER
+          value: /opt/corda
+        volumeMounts:
+        - mountPath: /opt/corda/node.conf
+          name: corda-config
+          subPath: notary-corda-config
+        - mountPath: /opt/corda/drivers/
+          name: corda-drivers
+        - mountPath: /opt/cordapps-share/
+          name: cordapps-share
+        - mountPath: /opt/corda/cordapps/
+          name: cordapps
+      - name: corda-node-certificate-decode
+        image: acrtopazeliteshared01.azurecr.io/debian_kubectl:1.1
+        command:
+        - /bin/bash
+        - -c
+        - cat /opt/corda/certificates/truststore-base64.jks | base64 -d > /opt/corda/certificates/truststore.jks && cat /opt/corda/certificates/sslkeystore-base64.jks | base64 -d > /opt/corda/certificates/sslkeystore.jks && cat /opt/corda/certificates/nodekeystore-base64.jks | base64 -d > /opt/corda/certificates/nodekeystore.jks
+        volumeMounts:
+        - mountPath: /opt/corda/certificates/truststore-base64.jks
+          name: corda-config
+          subPath: truststore-jks
+        - mountPath: /opt/corda/certificates/sslkeystore-base64.jks
+          name: corda-config
+          subPath: notary-simple-sslkeystore-jks
+        - mountPath: /opt/corda/certificates/nodekeystore-base64.jks
+          name: corda-config
+          subPath: notary-simple-nodekeystore-jks
+        - mountPath: /opt/corda/certificates/
+          name: corda-certificates
+      containers:
+      - name: corda-node-7386307d
+        image: corda/community:4.10-zulu-openjdk8
+        imagePullPolicy: Always
+        env:
+        - name: JVM_ARGS
+          value: -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap
+            -Dlog4j.configurationFile=/opt/corda/log4j2.xml
+        - name: CORDA_ARGS
+        - name: CONFIG_FOLDER
+          value: /opt/corda
+        - name: JAVA_HOME
+          value: /usr/lib/jvm/zulu-8-amd64
+        livenessProbe:
+          tcpSocket:
+            port: 10009
+          initialDelaySeconds: 200
+          periodSeconds: 15
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 10009
+          initialDelaySeconds: 10
+          periodSeconds: 3
+          failureThreshold: 1
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+          requests:
+            cpu: 50m
+            memory: 700Mi
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /opt/corda/node.conf
+          name: corda-config
+          subPath: notary-corda-config
+        - mountPath: /opt/corda/drivers/
+          name: corda-drivers
+        - mountPath: /opt/corda/certificates/
+          name: corda-certificates
+        - mountPath: /opt/corda/log4j2.xml
+          name: log4j
+          subPath: log4j2.xml
+        - mountPath: /opt/corda/artemis/
+          name: artemis
+        - mountPath: /opt/corda/cordapps/
+          name: cordapps
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      volumes:
+      - name: corda-config
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: "notary-corda-config"
+      - name: init-reg-scripts
+        configMap:
+          name: corda-init-reg-scripts
+          defaultMode: 0700
+      - name: corda-drivers
+      - name: cordapps
+      - name: corda-certificates
+      - name: log4j
+        configMap:
+          name: corda-log4j
+      - name: cordapps-share
+        persistentVolumeClaim:
+          claimName: cordapps-share
+  volumeClaimTemplates:
+  - metadata:
+      name: artemis
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: 1Gi
+      storageClassName: azurefile

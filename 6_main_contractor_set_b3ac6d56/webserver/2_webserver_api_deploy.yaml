@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    x500name: CN=China Construction South Pacific Dev, OU=Contractor, O=China Construction South Pacific Development, L=Singapore, C=SG
+  labels:
+    app: contractor-api
+    x500name_uuid: b3ac6d56
+  name: contractor-api
+  namespace: maple-topazelite-webservers-nodes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: contractor-api
+      x500name_uuid: b3ac6d56
+  template:
+    metadata:
+      annotations:
+        prometheus.io.scrape: "true"
+        x500name: CN=China Construction South Pacific Dev, OU=Contractor, O=China Construction South Pacific Development, L=Singapore, C=SG
+      labels:
+        app: contractor-api
+        x500name_uuid: b3ac6d56
+    spec:
+      priorityClassName: low-priority
+      serviceAccountName: webserver-node
+      initContainers:
+      - name: wait-for-corda-b3ac6d56
+        image: europe-west2-docker.pkg.dev/canvas-hook-339503/topaz/debian_kubectl:1.1
+        imagePullPolicy: Always
+        command:
+        - /bin/bash
+        - -c
+        - cd /tmp && ls -al && ./wait_for_corda.sh b3ac6d56
+        volumeMounts:
+        - mountPath: /tmp/wait_for_corda.sh
+          name: webserver-config
+          subPath: wait_for_corda.sh
+      containers:
+      - name: contractor-api
+        image: europe-west2-docker.pkg.dev/canvas-hook-339503/topaz/topaz-elite.webserver:api-enhancement
+        imagePullPolicy: Always
+        env:
+        - name: JAVA_TOOL_OPTIONS
+          value: -Xms150m -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30
+        - name: SPRING_PROFILES_ACTIVE
+          value: server,uat,topaz,postgresql
+        livenessProbe:
+          httpGet:
+            path: /api/v1/public/ping
+            port: 8080
+          initialDelaySeconds: 150
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/v1/public/ping
+            port: 8080
+          initialDelaySeconds: 90
+          periodSeconds: 3
+          failureThreshold: 1
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+          requests:
+            cpu: 50m
+            memory: 450Mi
+        volumeMounts:
+        - mountPath: /app/application-server.properties
+          name: webserver-properties
+          subPath: contractor-webserver-properties-application-server-properties
+        - mountPath: /app/application-topaz.yml
+          name: webserver-properties
+          subPath: contractor-webserver-properties-application-topaz-yml
+        - mountPath: /app/rpccerts/rpcssltruststore.jks
+          name: certificates
+          subPath: rpcssltruststore.jks
+        - name: secrets-store-inline
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+      volumes:
+      - name: webserver-config
+        configMap:
+          name: webserver-config
+          defaultMode: 0700
+      - name: webserver-properties
+        secret:
+          secretName: contractor-webserver-properties
+          items:
+            - key: contractor-webserver-properties-application-server-properties 
+              path: contractor-webserver-properties-application-server-properties
+            - key: contractor-webserver-properties-application-topaz-yml
+              path: contractor-webserver-properties-application-topaz-yml
+      - name: secrets-store-inline
+      - name: certificates
+        secret:
+          secretName: corda-rpccert-b3ac6d56

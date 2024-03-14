@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cordapps-share
+  namespace: prod-topazelite-webservers-nodes
+spec:
+  accessModes: ["ReadWriteMany"]
+  storageClassName: azurefile
+  resources:
+    requests:
+      storage: 1Gi
+
+    network

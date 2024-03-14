@@ -1,0 +1,112 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  labels:
+    app: doorman-app
+  name: doorman
+  namespace: maple-topazelite-corda-network
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: doorman-app
+  serviceName: doorman
+  template:
+    metadata:
+      annotations:
+        prometheus.io.port: "19000"
+        prometheus.io.scrape: "true"
+      labels:
+        app: doorman-app
+    spec:
+      priorityClassName: low-priority
+      initContainers:
+      - name: doorman-cert-gen
+        image: europe-west2-docker.pkg.dev/canvas-hook-339503/topaz/blkdoorman:0.8
+        imagePullPolicy: Always
+        args:
+        - --certgen
+        volumeMounts:
+        - mountPath: /gen
+          name: generated-certs
+        - mountPath: /certgen.conf
+          name: doorman-certgen-conf
+          subPath: certgen.conf
+      - name: doorman-cert-store
+        image: europe-west2-docker.pkg.dev/canvas-hook-339503/topaz/debian_kubectl:1.1
+        imagePullPolicy: Always
+        command:
+        - /bin/bash
+        - -c
+        - cp -n /tmp/gen/* /tmp/certificates
+        volumeMounts:
+        - mountPath: /tmp/gen
+          name: generated-certs
+        - mountPath: /tmp/certificates
+          name: stored-certs
+      containers:
+      - name: doorman
+        image: europe-west2-docker.pkg.dev/canvas-hook-339503/topaz/blkdoorman:0.8
+        imagePullPolicy: Always
+        env:
+        - name: JAVA_TOOL_OPTIONS
+          value: -Xms150m -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30 -Djava.net.preferIPv4Stack=true
+            -Djava.net.preferIPv6Addresses=false 
+        livenessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 150
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 3
+          failureThreshold: 1
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 1Gi
+          requests:
+            cpu: 50m
+            memory: 250Mi
+        workingDir: /app
+        volumeMounts:
+        - mountPath: /app/certificates
+          name: stored-certs
+        - mountPath: /app/application.properties
+          name: doorman-application-properties
+          subPath: application.properties
+        - mountPath: /app/resources/log4j2.xml
+          name: doorman-log4j2-xml
+          subPath: log4j2.xml
+      volumes:
+      - name: generated-certs
+      - name: doorman-application-properties
+        secret:
+          secretName: doorman-application-properties
+          items:
+            - key: application.properties
+              path: application.properties
+      - name: doorman-certgen-conf
+        secret:
+          secretName: doorman-certgen-conf
+          items:
+            - key: certgen.conf
+              path: certgen.conf
+      - name: doorman-log4j2-xml
+        secret:
+          secretName: doorman-log4j2-xml
+          items:
+            - key: log4j2.xml
+              path: log4j2.xml
+  volumeClaimTemplates:
+  - metadata:
+      name: stored-certs
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: stored-certs-storage-class
+      resources:
+        requests:
+          storage: 1Gi

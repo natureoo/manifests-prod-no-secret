@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: developer-frontend
+  labels:
+    app: developer-frontend
+  namespace: maple-topazelite-webservers-nodes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: developer-frontend
+  template:
+    metadata:
+      labels:
+        app: developer-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: europe-west2-docker.pkg.dev/canvas-hook-339503/topaz/topaz-elite.webserver:frontend-developer-enhancement
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 80
+            name: http-frontend
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: developer-frontend
+  namespace: maple-topazelite-webservers-nodes
+spec:
+  selector:
+    app: developer-frontend
+  ports:
+  - name: frontend-service-port
+    protocol: TCP
+    port: 80
+    targetPort: http-frontend

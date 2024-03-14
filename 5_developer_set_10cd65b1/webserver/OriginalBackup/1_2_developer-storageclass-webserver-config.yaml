@@ -1,0 +1,20 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: developer-webserver-properties
+spec:
+  provider: azure
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: "be160f3a-5e52-421b-a5bf-66946d6fbb79"
+    keyvaultName: "akv-topaz-elite-prod-01"
+    objects:  |
+      array:
+        - |
+          objectName: developer-webserver-properties-application-server-properties
+          objectType: secret
+        - |
+          objectName: developer-webserver-properties-application-topaz-yml
+          objectType: secret
+    tenantId: "6ccb6c2d-50ab-4f4a-b75f-20abaef22da0"

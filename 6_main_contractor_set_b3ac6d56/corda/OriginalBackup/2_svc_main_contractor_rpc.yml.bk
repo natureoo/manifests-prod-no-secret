@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    x500name: CN=China Construction South Pacific Dev, OU=Contractor, O=China Construction South Pacific Development, L=Singapore, C=SG
+  labels:
+    app: corda
+    blackbox_module: tcp_connect
+    x500name_uuid: b3ac6d56
+  name: corda-rpc-b3ac6d56
+  namespace: prod-topazelite-webservers-nodes
+spec:
+  ports:
+  - name: corda-rpc
+    port: 10010
+    targetPort: 10010
+  selector:
+    app: corda
+    x500name_uuid: b3ac6d56

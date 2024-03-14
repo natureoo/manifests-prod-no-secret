@@ -1,0 +1,58 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-body-size: "55m"
+  labels:
+    app: developer-webserver
+    domain: real-estate-developer.business.hsbc.com.sg
+    webserver_domain_uuid: 5fd5bfe0
+    x500name_uuid: 10cd65b1
+  name: developer-webserver
+  namespace: prod-topazelite-webservers-nodes
+spec:
+  ingressClassName: nginx
+  defaultBackend:
+    service:
+      name: developer-frontend
+      port:
+        number: 80
+  rules:
+  - host: real-estate-developer.business.hsbc.com.sg
+    http:
+      paths:
+      - backend:
+          service:
+            name: developer-api
+            port:
+              number: 80
+        path: /api
+        pathType: Prefix
+      - backend:
+          service:
+            name: developer-api
+            port:
+              number: 80
+        path: /logout
+        pathType: Prefix
+      - backend:
+          service:
+            name: developer-frontend
+            port:
+              number: 80
+        path: /ui
+        pathType: Prefix
+      - backend:
+          service:
+            name: developer-frontend
+            port:
+              number: 80
+        path: /static
+        pathType: Prefix
+  tls:
+  - hosts:
+    - real-estate-developer.business.hsbc.com.sg
+    secretName: developer-ingress-tls-csi

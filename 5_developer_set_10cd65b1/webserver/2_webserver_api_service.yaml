@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    x500name: CN=CK Development Limited, O=CryptoBLK Limited, OU=Developer, L=Singapore, C=SG
+    cloud.google.com/backend-config: '{"ports": {"8080":"my-backendconfig-developer"}}'
+    cloud.google.com/neg: '{"ingress": true}'
+  labels:
+    app: developer-api
+    x500name_uuid: 10cd65b1
+  name: developer-api
+  namespace: maple-topazelite-webservers-nodes
+spec:
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+  selector:
+    app: developer-api
+    x500name_uuid: 10cd65b1
+  type: NodePort
+---
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: my-backendconfig-developer
+  namespace: maple-topazelite-webservers-nodes
+spec:
+  timeoutSec: 90
+  connectionDraining:
+    drainingTimeoutSec: 0
+  healthCheck:
+    checkIntervalSec: 5
+    timeoutSec: 5
+    healthyThreshold: 1
+    unhealthyThreshold: 2
+    type: HTTP
+    requestPath: /api/v1/public/ping
+    port: 8080

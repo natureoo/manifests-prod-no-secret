@@ -1,0 +1,206 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  annotations:
+    x500name: CN=China Construction South Pacific Dev, OU=Contractor, O=China Construction South Pacific Development, L=Singapore, C=SG
+  labels:
+    app: corda
+    x500name_uuid: b3ac6d56
+  name: corda-node-contractor
+  namespace: maple-topazelite-webservers-nodes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: corda
+      x500name_uuid: b3ac6d56
+  serviceName: ""
+  template:
+    metadata:
+      annotations:
+        x500name: CN=China Construction South Pacific Dev, OU=Contractor, O=China Construction South Pacific Development, L=Singapore, C=SG
+      labels:
+        app: corda
+        x500name_uuid: b3ac6d56
+    spec:
+      serviceAccountName: corda-node
+      priorityClassName: low-priority
+      initContainers:
+      - name: cordapp-clone
+        image: mcr.microsoft.com/azure-cli
+        command:
+        - /bin/bash
+        - -c
+        - cp -r /opt/cordapps-share/cordapps /opt/corda/ && cp -r /opt/cordapps-share/drivers /opt/corda/
+        volumeMounts:
+        - mountPath: /opt/corda/cordapps/
+          name: cordapps
+        - mountPath: /opt/corda/drivers/
+          name: corda-drivers
+        - mountPath: /opt/cordapps-share/
+          name: my-cordapps-share
+        - mountPath: /opt/scripts/
+          name: init-reg-scripts
+      - name: kubectl-cache
+        image: europe-west2-docker.pkg.dev/canvas-hook-339503/topaz/debian_kubectl:1.1
+        imagePullPolicy: Always
+        command:
+        - /bin/bash
+        - -c
+        - cp /usr/local/bin/kubectl /tmp
+        volumeMounts:
+        - mountPath: /tmp
+          name: kubectl-cache
+      - name: corda-node-certificate-decode
+        image: europe-west2-docker.pkg.dev/canvas-hook-339503/topaz/debian_kubectl:1.1
+        command:
+        - /bin/bash
+        - -c
+        - cat /tmp/truststore/truststore-base64.jks | base64 -d > /tmp/truststore/truststore.jks
+        volumeMounts:
+        - mountPath: /tmp/truststore/truststore-base64.jks
+          name: corda-config
+          subPath: truststore-jks
+        - mountPath: /tmp/truststore/
+          name: temp-corda-certificates
+      - name: corda-init-reg
+        image: corda/community:4.10-zulu-openjdk8
+        imagePullPolicy: Always
+        command:
+        - /bin/bash
+        - -c
+        - cd /opt/init-reg-scripts/ && ./corda_init_reg.sh b3ac6d56 10009 && ./gen_rpccerts.sh
+          b3ac6d56 dummpypw dummpypw
+        env:
+        - name: CORDA_ARGS
+          value: initial-registration  --network-root-truststore certificates/truststore.jks
+            --network-root-truststore-password trustpass
+        - name: CONFIG_FOLDER
+          value: /opt/corda
+        - name: DOORMAN_URL
+          value: http://34.105.143.45/
+        - name: DOORMAN_AUTHKEY
+          value: dummykey
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /usr/local/bin
+          name: kubectl-cache
+        - mountPath: /opt/corda/node.conf
+          name: corda-config
+          subPath: contractor-node-conf
+        - mountPath: /tmp/truststore/
+          name: temp-corda-certificates
+        - mountPath: /opt/corda/drivers/
+          name: corda-drivers
+        - mountPath: /opt/init-reg-scripts/
+          name: init-reg-scripts
+        - mountPath: /opt/corda/certificates/
+          name: certificates
+      - name: corda-db-init-schema
+        image: corda/community:4.10-zulu-openjdk8
+        imagePullPolicy: Always
+        command:
+        - /bin/bash
+        - -c
+        - run-corda
+        env:
+        - name: CORDA_ARGS
+          value: run-migration-scripts --core-schemas --app-schemas
+        - name: CONFIG_FOLDER
+          value: /opt/corda
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /opt/corda/node.conf
+          name: corda-config
+          subPath: contractor-node-conf
+        - mountPath: /opt/corda/drivers/
+          name: corda-drivers
+        - mountPath: /opt/corda/cordapps/
+          name: cordapps
+        - mountPath: /opt/cordapps-share/
+          name: my-cordapps-share
+      containers:
+      - name: corda-node-b3ac6d56
+        image: corda/community:4.10-zulu-openjdk8
+        imagePullPolicy: Always
+        securityContext:
+          runAsUser: 0
+        livenessProbe:
+          tcpSocket:
+            port: 10010
+          initialDelaySeconds: 200
+          periodSeconds: 15
+          failureThreshold: 3
+        readinessProbe:
+          tcpSocket:
+            port: 10010
+          initialDelaySeconds: 10
+          periodSeconds: 3
+          failureThreshold: 1
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+          requests:
+            cpu: 50m
+            memory: 1Gi
+        env:
+        - name: JVM_ARGS
+          value: -XX:+UseG1GC -Xmx2G -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap
+            -Dlog4j.configurationFile=/opt/corda/log4j2.xml
+        - name: CORDA_ARGS
+        - name: CONFIG_FOLDER
+          value: /opt/corda
+        - name: JAVA_HOME
+          value: /usr/lib/jvm/zulu-8-amd64
+        volumeMounts:
+        - mountPath: /opt/corda/node.conf
+          name: corda-config
+          subPath: contractor-node-conf
+        - mountPath: /opt/corda/cordapps/
+          name: cordapps
+        - mountPath: /opt/corda/drivers/
+          name: corda-drivers
+        - mountPath: /opt/corda/certificates/
+          name: certificates
+        - mountPath: /opt/corda/log4j2.xml
+          name: log4j
+          subPath: log4j2.xml
+        - mountPath: /opt/corda/artemis/
+          name: artemis
+      volumes:
+      - name: kubectl-cache
+      - name: corda-config
+        configMap:
+          name: contractor-corda-config
+          items:
+            - key: contractor-node-conf
+              path: contractor-node-conf
+            - key: truststore-jks
+              path: truststore-jks
+      - name: init-reg-scripts
+        configMap:
+          name: corda-init-reg-scripts
+          defaultMode: 0777
+      - name: corda-drivers
+      - name: cordapps
+      - name: certificates
+      - name: temp-corda-certificates
+      - name: log4j
+        configMap:
+          name: corda-log4j
+      - name: my-cordapps-share
+        persistentVolumeClaim:
+          claimName: cordapps-share
+  volumeClaimTemplates:
+  - metadata:
+      name: artemis
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      storageClassName: artemis-storage-class
+      resources:
+        requests:
+          storage: 1Gi

@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: topaz-elite-prod
+  labels:
+    app: doorman
+  name: doorman
+  namespace: maple-topazelite-corda-network
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - backend:
+          service:
+            name: doorman-svc
+            port:
+              number: 80
+        path: /
+        pathType: Prefix

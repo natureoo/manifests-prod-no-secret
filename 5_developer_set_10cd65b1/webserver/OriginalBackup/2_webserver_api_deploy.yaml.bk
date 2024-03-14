@@ -1,0 +1,123 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    x500name: CN=CK Development Limited, O=CryptoBLK Limited, OU=Developer, L=Singapore,
+      C=SG
+  labels:
+    app: developer-api
+    x500name_uuid: 10cd65b1
+  name: developer-api
+  namespace: prod-topazelite-webservers-nodes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: developer-api
+      x500name_uuid: 10cd65b1
+  template:
+    metadata:
+      annotations:
+        prometheus.io.scrape: "true"
+        x500name: CN=CK Development Limited, O=CryptoBLK Limited, OU=Developer, L=Singapore,
+          C=SG
+      labels:
+        app: developer-api
+        x500name_uuid: 10cd65b1
+    spec:
+      priorityClassName: low-priority
+      serviceAccountName: webserver-node
+      initContainers:
+      - name: wait-for-corda-10cd65b1
+        command:
+        - /bin/bash
+        - -c
+        - cd /tmp && ls -al && ./wait_for_corda.sh 10cd65b1
+        image: acrtopazeliteprod01.azurecr.io/debian_kubectl:1.1
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /tmp/wait_for_corda.sh
+          name: webserver-config
+          subPath: wait_for_corda.sh
+      containers:
+      - name: developer-api
+        image: acrtopazeliteprod01.azurecr.io/topaz-elite.webserver:api-enhancement
+        imagePullPolicy: Always
+        env:
+        - name: JAVA_TOOL_OPTIONS
+          value: -Xms450m -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=30
+        - name: SPRING_PROFILES_ACTIVE
+          value: server,uat,developer-mail,topaz,postgresql
+        livenessProbe:
+          httpGet:
+            path: /api/v1/public/ping
+            port: 8080
+          initialDelaySeconds: 150
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /api/v1/public/ping
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 3
+          failureThreshold: 1
+        resources:
+          limits:
+            cpu: 2000m
+            memory: 2Gi
+          requests:
+            cpu: 50m
+            memory: 450Mi
+        volumeMounts:
+        - mountPath: /app/application-server.properties
+          name: webserver-properties
+          subPath: developer-webserver-properties-application-server-properties
+        - mountPath: /app/application-topaz.yml
+          name: webserver-properties
+          subPath: developer-webserver-properties-application-topaz-yml
+        - mountPath: /app/rpccerts/rpcssltruststore.jks
+          name: certificates
+          subPath: rpcssltruststore.jks
+        - name: secrets-store-inline
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+      volumes:
+      - name: webserver-config
+        configMap:
+          name: webserver-config
+          defaultMode: 0700
+      - name: webserver-properties
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: "developer-webserver-properties"
+      - name: secrets-store-inline
+        csi:
+          driver: secrets-store.csi.k8s.io
+          readOnly: true
+          volumeAttributes:
+            secretProviderClass: "developer-ingress-tls"
+      - name: certificates
+        secret:
+          secretName: corda-rpccert-10cd65b1
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    x500name: CN=CK Development Limited, O=CryptoBLK Limited, OU=Developer, L=Singapore,
+      C=SG
+  labels:
+    app: developer-api
+    x500name_uuid: 10cd65b1
+  name: developer-api
+  namespace: prod-topazelite-webservers-nodes
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  selector:
+    app: developer-api
+    x500name_uuid: 10cd65b1

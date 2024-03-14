@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "180"
+    nginx.ingress.kubernetes.io/proxy-body-size: "55m"
+  labels:
+    app: contractor-webserver-test
+  name: example
+  namespace: maple-topazelite-webservers-nodes
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: hello-world-1.maple-topazelite-webservers-nodes.svc.cluster.local 
+    http:
+      paths:
+        - pathType: Prefix
+          backend:
+            service:
+              name: hello-world-1
+              port:
+                number: 60000
+          path: /foo

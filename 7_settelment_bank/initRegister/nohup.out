@@ -1,0 +1,50 @@
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/root/.capsule/apps/net.corda.node.Corda_4.10/log4j-slf4j-impl-2.17.1.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/root/http-server/manifests-prod-no-secret/7_settelment_bank/initRegister/drivers/corda-shell-4.10.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.apache.logging.slf4j.Log4jLoggerFactory]
+
+   ______               __
+  / ____/     _________/ /___ _
+ / /     __  / ___/ __  / __ `/         Always borrow money from a pessimist.
+/ /___  /_/ / /  / /_/ / /_/ /          He won't expect it back.
+\____/     /_/   \__,_/\__,_/
+
+--- Corda Community Edition 4.10 (fa98aa7) -------------------------------------------------------------
+
+
+Logs can be found in                    : /root/http-server/manifests-prod-no-secret/7_settelment_bank/initRegister/logs
+Advertised P2P messaging addresses      : 34.142.74.62:10009
+RPC connection address                  : 0.0.0.0:31001
+RPC admin connection address            : 0.0.0.0:31002
+Loaded 5 CorDapp(s)                     : CorDapp com.hsbc.mirrorvalue.cordapp.cash-movement-workflows version 0.1 by Unknown with licence Unknown, Workflow CorDapp: Pingpng Flows version 1 by vendor Corda Open Source with licence Apache License, Version 2.0, Workflow CorDapp: Topaz Elite Workflows version 1 by vendor CryptoBLK with licence Proprietary, CorDapp com.hsbc.mirrorvalue.cordapp.cash-movement-contracts version 0.1 by Unknown with licence Unknown, Contract CorDapp: Topaz Elite Contracts version 1 by vendor CryptoBLK with licence Proprietary
+Node for "The Hongkong and Shanghai Banking Corporation Limited" started up and registered in 32.58 sec
+Running P2PMessaging loop
+[WARN] 14:21:48+0000 [Thread-11 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /45.79.181.104:16270: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 14:32:03+0000 [Thread-15 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /45.79.128.205:34600: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 14:41:43+0000 [Thread-19 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /212.102.40.218:35084: javax.net.ssl.SSLHandshakeException: no cipher suites in common.
+[WARN] 14:41:44+0000 [Thread-21 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /212.102.40.218:4760: javax.net.ssl.SSLHandshakeException: Client requested protocol TLSv1.1 is not enabled or supported in server context.
+[WARN] 14:45:37+0000 [Thread-5 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /212.102.40.218:44368: javax.net.ssl.SSLHandshakeException: no cipher suites in common.
+[WARN] 14:45:37+0000 [Thread-7 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /212.102.40.218:17024: javax.net.ssl.SSLHandshakeException: Client requested protocol TLSv1.1 is not enabled or supported in server context.
+[WARN] 18:03:27+0000 [Thread-14 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /43.131.42.47:19922: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 18:03:47+0000 [Thread-17 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /43.131.42.47:25314: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 18:03:53+0000 [Thread-21 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /43.131.37.227:26462: javax.net.ssl.SSLHandshakeException: no cipher suites in common.
+[WARN] 18:03:57+0000 [Thread-23 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /43.131.37.227:33196: javax.net.ssl.SSLHandshakeException: Client requested protocol TLSv1.1 is not enabled or supported in server context.
+[WARN] 03:22:37+0000 [Thread-2 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /87.236.176.190:32811: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 04:52:03+0000 [Thread-4 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /162.142.125.14:59834: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 12:01:36+0000 [Thread-11 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /212.102.40.218:45498: javax.net.ssl.SSLHandshakeException: no cipher suites in common.
+[WARN] 12:01:37+0000 [Thread-13 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /212.102.40.218:14214: javax.net.ssl.SSLHandshakeException: Client requested protocol TLSv1.1 is not enabled or supported in server context.
+[WARN] 12:51:03+0000 [Thread-21 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /167.248.133.183:48002: javax.net.ssl.SSLHandshakeException: no cipher suites in common.
+[WARN] 12:51:03+0000 [Thread-23 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /167.248.133.183:48482: javax.net.ssl.SSLHandshakeException: Client requested protocol TLSv1.1 is not enabled or supported in server context.
+[WARN] 16:13:57+0000 [Thread-4 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /45.56.108.128:53204: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 22:38:08+0000 [Thread-7 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /162.142.125.222:37336: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 01:49:35+0000 [Thread-23 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /87.236.176.176:60423: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 14:38:12+0000 [Thread-3 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /172.104.11.51:60210: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 16:19:16+0000 [Thread-4 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /45.56.108.128:40920: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 17:47:14+0000 [Thread-8 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /167.248.133.190:54252: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 04:32:32+0000 [Thread-13 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /162.142.125.213:59052: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 17:50:37+0000 [Thread-20 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /43.153.21.216:19892: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 17:50:58+0000 [Thread-23 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /43.153.21.216:25794: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+[WARN] 21:23:49+0000 [Thread-13 (activemq-netty-threads)] core.server. - AMQ222208: SSL handshake failed for client from /87.236.176.202:51133: javax.net.ssl.SSLHandshakeException: Empty server certificate chain.
+Shutting down ...
+2024-01-30 21:46:55,601 Thread-6 ERROR Ignoring log event after Log4j has been shut down.

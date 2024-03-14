@@ -1,0 +1,244 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: corda-init-reg-scripts
+  namespace: maple-topazelite-webservers-nodes
+data:
+  corda_enterprise_db_migration.sh: "#!/bin/bash\n\nset -e\n\n# vars\nmigration_tool_url=$1\nx500name_uuid=$2\napp_version=$3\ncorda_dir=/opt/corda\ncordapps_share_dir=/opt/cordapps-share\nmigration_tool_dir=/opt/corda/migration_tool\nmigration_jar=upgrade-to-enterprise.jar\nmigraiton_jar_store_name=$migration_jar-$app_version-$x500name_uuid\n\n#
+    check if migration jar exists\ncd $cordapps_share_dir\nif [[ -f $migraiton_jar_store_name
+    ]]; then\n  printf \"migration jar: $migraiton_jar_store_name exists, copying
+    to cordapps directory..\\n\"\n  # copy to cordapps directory\n  cp -n $migraiton_jar_store_name
+    $corda_dir/cordapps/$migration_jar\n  exit 0\nelif [[ -f $migraiton_jar_store_name'-no-need-to-migrate'
+    ]]; then\n  printf \"Nothing to migrate, exiting..\\n\"\n  exit 0\nelse\n  printf
+    \"creating the migration jar..\\n\"\n\n  # check if migration-tool exists\n  cd
+    $migration_tool_dir\n  filename=`basename $migration_tool_url`\n  if [[ ! -f $filename
+    ]]; then\n    # download migration-tool\n    printf \"migration-tool not found,
+    downloading from $migration_tool_url \\n\"\n    curl -LO $migration_tool_url\n
+    \ fi\n\n  # create migration jar\n  cd $corda_dir\n  java -jar $migration_tool_dir/$filename
+    create-migration-sql-for-cordapp -b .\n  \n  if [[ ! -d migration ]]; then\n    printf
+    \"Nothing to migrate, exiting..\\n\"\n    touch $cordapps_share_dir/$migraiton_jar_store_name'-no-need-to-migrate'\n
+    \   exit 0\n  fi\n  cd migration\n  # modify migration sql: mark as ran if the
+    table exists (liquidbase syntax)\n  for sql_file in *.sql; do\n    table_names=$(cat
+    $sql_file | grep -Po '(?<=create table )(.*)(?= \\()' | tr '[:lower:]' '[:upper:]')\n
+    \   for table_name in $table_names\n    do\n      sed -i '/^--changeset.*$/a --preconditions
+    onFail:MARK_RAN' $sql_file\n      sed -i \"/^--preconditions.*$/a --precondition-sql-check
+    expectedResult:0 SELECT count(*) FROM information_schema.tables where table_name
+    = '$table_name';\" $sql_file\n      cat $sql_file\n    done\n  done\n  cd ..\n
+    \ jar cvf ./cordapps/$migration_jar migration\n\n  # save to the cordapps share\n
+    \ printf \"copying to the cordapps share pvc..\\n\"\n  cp -n $corda_dir/cordapps/$migration_jar
+    $cordapps_share_dir/$migraiton_jar_store_name\nfi"
+  corda_init_reg.sh: "#!/bin/bash\n\n# dependency\nwhich base64\n\n# vars\nx500name_uuid=$1\ncorda_user=corda\ncorda_dir=/opt/corda\ninit_reg_secret_name=corda-init-reg-$x500name_uuid\ncert_secret_name=corda-cert-$x500name_uuid\nnodeinfo_secret_name=corda-nodeinfo-$x500name_uuid\nlog_path=/var/log/ca_request.out\nfirst_start_up_log_path=/var/log/first_start_up.log\np2p_port=$2\n\n\n#
+    functions\ncreate_nodeinfo_secret()\n{\n  pushd ./\n  secret_exists=$(kubectl
+    get secrets $nodeinfo_secret_name -o name || echo 0)\n  if [ \"$secret_exists\"
+    == \"0\" ]; then\n    # run generate-node-info => to get identity-private-key\n
+    \   printf \"Run generate-node-info.\\n\"\n    export CORDA_ARGS=generate-node-info\n
+    \   cd $corda_dir\n    run-corda\n\n    # create k8s secret to store the NodeInfo\n
+    \   kubectl create secret generic $nodeinfo_secret_name \\\n    --from-file=$corda_dir/$(ls
+    nodeInfo*) \\\n    --from-file=$corda_dir/certificates/sslkeystore.jks\n    kubectl
+    label secret $nodeinfo_secret_name type=nodeinfo app=corda x500name_uuid=$x500name_uuid
+    --overwrite\n  else\n    printf \"$nodeinfo_secret_name exists.\\n\"\n  fi\n  popd\n}\n\ncreate_messagingNode_secret()\n{\n
+    \ if [[ ! -z \"${CLUSTER_ONOFF_KUBE_NAMESPACE}\" ]]; then\n    printf \"cluster_onoff_enabled
+    is true, creating messagingNodeKeystore.jks and messagingNodeTruststore.jks \\n\"\n
+    \   cp $corda_dir/certificates/sslkeystore.jks $corda_dir/certificates/messagingNodeKeystore.jks\n
+    \   kubectl get secrets mutual-auth-secret -o jsonpath=\"{.data['messagingTruststore\\.jks']}\"
+    | base64 -d > $corda_dir/certificates/messagingNodeTruststore.jks\n    keytool
+    -export -keystore \"$corda_dir/certificates/sslkeystore.jks\" -storepass cordacadevpass
+    -alias cordaclienttls \\\n      | keytool -import -keystore \"$corda_dir/certificates/messagingNodeTruststore.jks\"
+    -storepass trustpass -alias cordaclienttls -noprompt\n  fi\n}\n\nvercomp () {\n
+    \   if [[ $1 == $2 ]]\n    then\n        return 0\n    fi\n    local IFS=.\n    local
+    i ver1=($1) ver2=($2)\n    # fill empty fields in ver1 with zeros\n    for ((i=${#ver1[@]};
+    i<${#ver2[@]}; i++))\n    do\n        ver1[i]=0\n    done\n    for ((i=0; i<${#ver1[@]};
+    i++))\n    do\n        if [[ -z ${ver2[i]} ]]\n        then\n            # fill
+    empty fields in ver2 with zeros\n            ver2[i]=0\n        fi\n        if
+    ((10#${ver1[i]} > 10#${ver2[i]}))\n        then\n            return 1\n        fi\n
+    \       if ((10#${ver1[i]} < 10#${ver2[i]}))\n        then\n            return
+    2\n        fi\n    done\n    return 0\n}\n\n# download kubectl if not exists (for
+    official image)\nif ! [ -x \"$(command -v kubectl)\" ]; then\n  printf \"kubectl
+    not exists, installing..\\n\"\n  cd /tmp\n  curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl
+    -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl\n
+    \ chmod +x ./kubectl\n  mv ./kubectl /usr/local/bin/kubectl\nelse\n  printf \"kubectl
+    exists.\\n\"\nfi\n\n# check if secret object exists\nprintf \"Try to get secret
+    object: $cert_secret_name, will run init-reg if not exists..\\n\"\nsecret_exists=$(kubectl
+    get secrets $cert_secret_name -o name || echo 0)\n\necho \"secret_exists: $secret_exists\"\nif
+    [ \"$secret_exists\" != \"0\" ]; then\n  printf \"Certificates: $cert_secret_name
+    exist, copying to $corda_dir/certificates\\n\"\n  kubectl get secrets $cert_secret_name
+    -o jsonpath=\"{.data['truststore\\.jks']}\" | base64 -d > $corda_dir/certificates/truststore.jks\n
+    \ kubectl get secrets $cert_secret_name -o jsonpath=\"{.data['sslkeystore\\.jks']}\"
+    | base64 -d > $corda_dir/certificates/sslkeystore.jks\n  kubectl get secrets $cert_secret_name
+    -o jsonpath=\"{.data['nodekeystore\\.jks']}\" | base64 -d > $corda_dir/certificates/nodekeystore.jks\n
+    \ \n  create_messagingNode_secret\n  \n  create_nodeinfo_secret\n\n  chown -R
+    $corda_user:$corda_user $corda_dir/certificates\n  ls -la $corda_dir/certificates\n
+    \ exit 0\nelse\n\n  # try to get init-reg secert to resume the registration\n
+    \ printf \"Try to get secret object: $init_reg_secret_name..\\n\"\n  secret_exists=$(kubectl
+    get secrets $init_reg_secret_name -o name || echo 0)\n  if [ \"$secret_exists\"
+    != \"0\" ]; then\n    kubectl get secrets $init_reg_secret_name -o jsonpath=\"{.data['nodekeystore\\.jks']}\"
+    | base64 -d > $corda_dir/certificates/nodekeystore.jks\n    kubectl get secrets
+    $init_reg_secret_name -o jsonpath=\"{.data['certificate-request-id\\.txt']}\"
+    | base64 -d > $corda_dir/certificates/certificate-request-id.txt\n  fi\n\n  #
+    start init reg flow\n  printf \"Running Corda Init Registration Flow..\\n\"\n
+    \ cp -rf /tmp/truststore/* $corda_dir/certificates;\n  # check if truststore.jks
+    exists\n  if [ ! -f $corda_dir/certificates/truststore.jks ]; then\n    printf
+    \"truststore.jks not exists..\\n\"\n    ls -al $corda_dir/certificates\n    sleep
+    10\n    exit 1\n  fi\n  cd $corda_dir\n  nohup run-corda > $log_path 2>&1 &\n
+    \ init_reg_java_pid=$!\n\n  while true; do\n    # check if init-reg is done(sometimes
+    the cert is already downloaded but database is not updating)\n    if [ -f $corda_dir/certificates/sslkeystore.jks
+    ]; then\n      if [ ! -f $corda_dir/.initialregistration ]; then\n        printf
+    \"Completed Init-Registration.\\n\"\n        cat $log_path\n        wait $init_reg_java_pid\n\n
+    \       # check corda version\n        export CORDA_ARGS=\"--version\"\n        corda_version=$(run-corda
+    | grep -Po '(?<=^Version: )[0-9]*\\.[0-9]*' )\n        vercomp $corda_version
+    4.5\n        result=$?\n        if [[ $result != 2 ]]; then\n          # start
+    corda once to generate identity-private-key (added for CE 4.5 init-reg flow changes)\n
+    \         printf \"Start up Corda node once for generating idnetity-private-key.
+    \\n\"\n          export CORDA_ARGS=\"\"\n          nohup run-corda > $first_start_up_log_path
+    2>&1 & \n          first_start_up_pid=$!\n          printf \"Waiting for port
+    $p2p_port until 100s\\n\"\n          timeout 100 bash -c \"until echo > /dev/tcp/localhost/$p2p_port;
+    do sleep 10; done\"\n          kill $first_start_up_pid\n        fi\n\n        #
+    create k8s secret to store the certificates\n        kubectl create secret generic
+    $cert_secret_name \\\n        --from-file=$corda_dir/certificates/truststore.jks
+    \\\n        --from-file=$corda_dir/certificates/sslkeystore.jks \\\n        --from-file=$corda_dir/certificates/nodekeystore.jks\n
+    \       kubectl label secret $cert_secret_name type=cordacerts app=corda x500name_uuid=$x500name_uuid
+    --overwrite\n        chown -R $corda_user:$corda_user $corda_dir/certificates\n
+    \       ls -al $corda_dir/certificates\n\n        create_messagingNode_secret\n
+    \       \n        create_nodeinfo_secret\n\n        exit 0\n      else\n        printf
+    \"Completing Init-Registration..\\n\"\n      fi\n    else\n      # check if reuqest
+    Id is out\n      request_id=$(cat certificates/certificate-request-id.txt 2>/dev/null
+    || echo 0)\n      if [ \"$request_id\" != \"0\" ]; then\n        printf \"Init
+    Registration Request sent, ID: $request_id\\n\"\n\n        printf \"Try to get
+    secret object: $init_reg_secret_name..\\n\"\n        secret_exists=$(kubectl get
+    secrets $init_reg_secret_name -o name || echo 0)\n        if [ \"$secret_exists\"
+    == \"0\" ]; then\n          kubectl create secret generic $init_reg_secret_name
+    \\\n          --from-file=$corda_dir/certificates/nodekeystore.jks \\\n          --from-file=$corda_dir/certificates/certificate-request-id.txt\n
+    \         kubectl label secret $init_reg_secret_name type=initreg app=corda x500name_uuid=$x500name_uuid
+    --overwrite\n        fi\n\n        # check if DOORMAN_URL exists => try auto approve\n
+    \       if [ ! -z \"$DOORMAN_URL\" ]; then\n          # auto approve\n          printf
+    \"Auto Approve is enabled..\\n\"\n          curl -i -X POST $DOORMAN_URL/admin/certificate/approve/$request_id
+    -H \"Authorization: $DOORMAN_AUTHKEY\"\n          printf \"sleep for 35s, wait
+    for corda to poll the certificates from doorman.\\n\"\n          sleep 35\n        else\n
+    \         printf \"Please contact CA to approve your request.\\n\"\n        fi\n
+    \     else\n        printf \"Getting Request ID..\\n\"\n      fi\n\n      # check
+    if exception throw => return 0 (error)\n      exception=$(cat $log_path | grep
+    -Eo '.+[Ee]xception.+' || echo 0)\n      reason=$(cat $log_path | grep -Eo '.*Reason.*'
+    || echo '')\n      if [ \"$exception\" != \"0\" ]; then\n        printf \"Exception
+    found: \\n$exception \\n$reason \\nPlease check $log_path and contact CA for further
+    diagnosis.\\n\"\n        cat $log_path\n\n        printf \"Try again after 60s..
+    \\n\"\n        sleep 60\n      fi\n      tail -10 $log_path\n      sleep 1\n    fi\n
+    \ done\nfi\n"
+  download_from_azure_sa.sh: |
+    #!/bin/bash
+
+    set -e
+
+    store_dir=$1
+    source_urls=$2
+    target_dir=$3
+
+    while read url; do
+      # echo "$url"
+      filename=`basename $url`
+      if [[ $filename == *SNAPSHOT* || $filename == *snapshot* ]]; then
+        printf "Download/replace snapshot: $filename \n"
+        rm -f $store_dir/$filename
+        az storage blob download --account-name $AZURE_SA_ACCOUNT --account-key $AZURE_SA_KEY --container-name cordapps --name $filename --file $store_dir/$filename
+      elif [[ ! -f $store_dir/$filename ]]; then
+        printf "Jar Not Found in Share: $filename \n"
+        az storage blob download --account-name $AZURE_SA_ACCOUNT --account-key $AZURE_SA_KEY --container-name cordapps --name $filename --file $store_dir/$filename
+      fi
+      printf "Jar Copying: $target_dir/$filename \n"
+      cp -n $store_dir/$filename $target_dir/$filename
+    done <$source_urls
+
+    printf "Result: \n"
+    ls -al $target_dir
+  download_to_target.sh: |
+    #!/bin/bash
+
+    set -e
+
+    store_dir=$1
+    source_urls=$2
+    target_dir=$3
+
+    while read url; do
+      # echo "$url"
+      filename=`basename $url`
+      if [[ $filename == *SNAPSHOT* || $filename == *snapshot* ]]; then
+        printf "Download/replace snapshot: $filename \n"
+        rm -f $store_dir/$filename
+        wget -P $store_dir $url
+      elif [[ ! -f $store_dir/$filename ]]; then
+        printf "Jar Not Found in Share: $filename \n"
+        wget -P $store_dir $url
+      fi
+      printf "Jar Copying: $target_dir/$filename \n"
+      cp -n $store_dir/$filename $target_dir/$filename
+    done <$source_urls
+
+    printf "Result: \n"
+    ls -al $target_dir
+  gen_rpccerts.sh: |
+    #!/bin/bash
+
+    set -e
+
+    # vars
+    x500name_uuid=$1
+
+    keystore_name=rpcsslkeystore.jks
+    truststore_name=rpcssltruststore.jks
+    keystorepass=$2
+    truststorepass=$3
+    cert_secret_name=corda-rpccert-$x500name_uuid
+
+    corda_user=corda
+    cert_path=/opt/corda/certificates
+
+    cd $cert_path
+    rm -f $keystore_name $truststore_name
+
+    # check if secret object exists
+    printf "Try to get secret object: $cert_secret_name, will run generate if not exists..\n"
+    secret_exists=$(kubectl get secrets $cert_secret_name -o name || echo 0)
+    if [ "$secret_exists" != "0" ]; then
+      printf "Certificates: $cert_secret_name exist, copying to $corda_dir/certificates\n"
+      kubectl get secrets $cert_secret_name -o jsonpath="{.data['rpcsslkeystore\.jks']}" | base64 -d > $cert_path/rpcsslkeystore.jks
+      chown -R $corda_user:$corda_user $cert_path
+      ls -al $cert_path
+      exit 0
+    else
+      printf "Generating RpcCerts..\n"
+      # create PrivateKeyEntry
+      keytool -genkey -keystore $keystore_name -validity 3650 -alias rpcssl \
+        -keyalg EC -keysize 256 -storetype JKS \
+        -dname "O=B9970B72-8B58-40A6-86B1-3BC9BC798C6B, L=HongKong, C=CN" \
+        -keypass $keystorepass -storepass $keystorepass \
+        -ext BasicConstraints=CA:false,PathLen:0 \
+        -ext KeyUsage=digitalSignature,keyEncipherment,keyAgreement \
+        -ext ExtendedKeyUsage=serverAuth,clientAuth,anyExtendedKeyUsage \
+        2>/dev/null
+
+      # export cert
+      keytool -exportcert -keystore $keystore_name -alias rpcssl \
+        -storepass $keystorepass \
+        -file $truststore_name.crt \
+        2>/dev/null
+
+      # add it to trustedCertEntry
+      keytool -importcert -file $truststore_name.crt -alias rpcssl \
+        -keystore $truststore_name \
+        -keypass $truststorepass -storepass $truststorepass \
+        -noprompt \
+        2>/dev/null
+
+      # create k8s secret to store the certificates
+      kubectl create secret generic $cert_secret_name \
+        --from-file=$cert_path/$keystore_name \
+        --from-file=$cert_path/$truststore_name
+
+      kubectl label secret $cert_secret_name type=rpccert app=corda x500name_uuid=$x500name_uuid --overwrite
+
+      # clean up
+      rm -f $truststore_name.crt
+      chown -R $corda_user:$corda_user $cert_path
+      ls -al $cert_path
+      exit 0
+    fi

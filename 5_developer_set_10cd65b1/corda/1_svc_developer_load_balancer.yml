@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    service.beta.kubernetes.io/azure-load-balancer-resource-group: rg-topaz-elite-prod-terraform
+    x500name: CN=CK Development Limited, OU=Developer, O=CryptoBLKLimited, L=Singapore, C=SG
+  labels:
+    app: corda
+    blackbox_module: tcp_connect
+    x500name_uuid: 10cd65b1
+  name: corda-p2p-10cd65b1
+  namespace: maple-topazelite-webservers-nodes
+spec:
+  loadBalancerIP: 34.147.247.200
+  ports:
+  - name: corda-p2p
+    port: 10009
+    targetPort: 10009
+  selector:
+    app: corda
+    x500name_uuid: 10cd65b1
+  type: LoadBalancer

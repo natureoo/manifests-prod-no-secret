@@ -1,0 +1,130 @@
+topaz:
+  node: DEVELOPER
+  user_profiles:
+    - id: 1
+      type: HSBC
+      name: HSBC Entity
+      location: HK
+      contactPersonName: Dev HSBC
+      contactPersonNumber: 1234
+      contactPersonEmail: devhsbc@email.com
+    - id: 2
+      type: DEVELOPER
+      name: Developer Entity
+      location: HK
+      contactPersonName: Dev dev
+      contactPersonNumber: 1234
+      contactPersonEmail: devdev@email.com
+    - id: 3
+      type: APPROVER
+      name: Approver Entity
+      location: HK
+      contactPersonName: Dev app
+      contactPersonNumber: 1234
+      contactPersonEmail: devapp@email.com
+  users:
+    - username: po@developer.com
+      email: po@developer.com
+      password: projectOfficer
+      role: PROJECT_OFFICER
+      lastName: Icer
+      firstName: Poe
+      saEnabled: 0
+      usermanagementEnabled: false
+      profilemanagementEnabled: false
+      userProfileId: 2
+    - username: finance@develop.com
+      email: finance@develop.com
+      password: finance
+      role: FINANCE_DEPARTMENT
+      lastName: Nancy
+      firstName: Fin
+      saEnabled: 0
+      usermanagementEnabled: false
+      profilemanagementEnabled: false
+      userProfileId: 2
+    - username: sadev@superadmin.com
+      email: sadev@superadmin.com
+      password: sa
+      role: SUPER_ADMIN
+      lastName: Admin
+      firstName: Super
+      usermanagementEnabled: true
+      profilemanagementEnabled: true
+      userProfileId: 1
+    - username: admin@admin.com
+      email: admin@admin.com
+      password: admin
+      role: ADMIN
+      lastName: lionheart
+      firstName: squall
+      saEnabled: 0
+      usermanagementEnabled: false
+      profilemanagementEnabled: false
+      userProfileId: 1
+    - username: ca@ca.com
+      email: ca@ca.com
+      password: ca
+      role: CLAIM_APPROVER
+      lastName: app
+      firstName: claim
+      saEnabled: 0
+      usermanagementEnabled: false
+      profilemanagementEnabled: false
+      userProfileId: 3
+    - username: poa@poa.com
+      email: poa@poa.com
+      password: poa
+      role: PAYMENT_ORDER_APPROVER
+      lastName: app
+      firstName: po
+      saEnabled: 0
+      usermanagementEnabled: false
+      profilemanagementEnabled: false
+      userProfileId: 3
+    - username: ca2@ca.com
+      email: ca2@ca.com
+      password: ca
+      role: CLAIM_APPROVER
+      lastName: app2
+      firstName: claim2
+      saEnabled: 0
+      usermanagementEnabled: false
+      profilemanagementEnabled: false
+      userProfileId: 3
+    - username: poa2@poa.com
+      email: poa2@poa.com
+      password: poa
+      role: PAYMENT_ORDER_APPROVER
+      lastName: app2
+      firstName: po2
+      saEnabled: 0
+      usermanagementEnabled: false
+      profilemanagementEnabled: false
+      userProfileId: 3
+    - username: poa3@poa.com
+      email: poa3@poa.com
+      password: poa
+      role: PAYMENT_ORDER_APPROVER
+      lastName: app3
+      firstName: po3
+      saEnabled: 0
+      usermanagementEnabled: false
+      profilemanagementEnabled: false
+      userProfileId: 3
+    - username: ca3@ca.com
+      email: ca3@ca.com
+      password: ca
+      role: CLAIM_APPROVER
+      lastName: app3
+      firstName: claim3
+      saEnabled: 0
+      usermanagementEnabled: false
+      profilemanagementEnabled: false
+      userProfileId: 3
+  init_sa:
+    - email: genesis@user.com
+      role: SUPER_ADMIN
+      lastName: User
+      firstName: Genesis
+      userProfileId: 1

@@ -1,0 +1,15 @@
+kubectl cp prod-topazelite-corda-network/doorman-0:certificates/truststore.jks ./truststore.jks
+kubectl cp prod-topazelite-corda-network/doorman-0:certificates/simple_nodekeystore.jks ./simple_nodekeystore.jks
+kubectl cp prod-topazelite-corda-network/doorman-0:certificates/simple_sslkeystore.jks ./simple_sslkeystore.jks
+
+kubectl cp prod-topazelite-corda-network/doorman-0:certificates/doorman.jks ./doorman.jks
+kubectl cp prod-topazelite-corda-network/doorman-0:certificates/root.jks ./root.jks
+
+
+openssl base64 -A -in simple_nodekeystore.jks > simple-nodekeystore-jks-base64
+openssl base64 -A -in simple_sslkeystore.jks > simple-sslkeystore-jks-base64
+openssl base64 -A -in truststore.jks > truststore-jks-base64
+
+az keyvault secret set --vault-name "akv-topaz-elite-prod-01" --name "notary-simple-nodekeystore-jks" --file "simple-nodekeystore-jks-base64"
+az keyvault secret set --vault-name "akv-topaz-elite-prod-01" --name "notary-simple-sslkeystore-jks" --file "simple-sslkeystore-jks-base64"
+az keyvault secret set --vault-name "akv-topaz-elite-prod-01" --name "truststore-jks" --file "truststore-jks-base64"

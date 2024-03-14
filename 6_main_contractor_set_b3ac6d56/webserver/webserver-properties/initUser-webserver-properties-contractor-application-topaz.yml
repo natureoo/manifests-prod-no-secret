@@ -1,0 +1,51 @@
+topaz:
+  node: MAIN_CONTRACTOR
+  user_profiles:
+    - id: 1
+      type: HSBC
+      name: HSBC Entity
+      location: HK
+      contactPersonName: Con HSBC
+      contactPersonNumber: 1234
+      contactPersonEmail: conhsbc@email.com
+    - id: 2
+      type: MAIN_CONTRACTOR
+      name: Main Contractor Entity
+      location: HK
+      contactPersonName: Con MC
+      contactPersonNumber: 1234
+      contactPersonEmail: conmc@email.com
+  users:
+    - username: user@contractor.com
+      email: user@contractor.com
+      password: contractor
+      role: MAIN_CONTRACTOR
+      lastName: Tractor
+      firstName: Con
+      usermanagementEnabled: false
+      profilemanagementEnabled: false
+      userProfileId: 2
+    - username: sacon@superadmin.com
+      email: sacon@superadmin.com
+      password: sa
+      role: SUPER_ADMIN
+      lastName: Admin
+      firstName: Super
+      usermanagementEnabled: true
+      profilemanagementEnabled: true
+      userProfileId: 1
+    - username: admin@admin.com
+      email: admin@admin.com
+      password: admin
+      role: ADMIN
+      lastName: Admin
+      firstName: Admin
+      usermanagementEnabled: true
+      profilemanagementEnabled: true
+      userProfileId: 2
+  init_sa:
+    - email: genesis@user.com
+      role: SUPER_ADMIN
+      lastName: User
+      firstName: Genesis
+      userProfileId: 1

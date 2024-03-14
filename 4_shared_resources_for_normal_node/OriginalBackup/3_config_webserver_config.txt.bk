@@ -1,0 +1,2 @@
+kubectl create configmap webserver-config \
+--from-file=wait_for_corda.sh=wait_for_corda.sh
