@@ -69,12 +69,13 @@ spec:
         command:
         - /bin/bash
         - -c
-        - cd /opt/init-reg-scripts/ && ./corda_init_reg.sh 10cd65b1 10009 && ./gen_rpccerts.sh
-          10cd65b1 dummpypw dummpypw
+#        - cd /opt/init-reg-scripts/ && ./corda_init_reg.sh 10cd65b1 10009 && ./gen_rpccerts.sh
+#          10cd65b1 dummpypw dummpypw
+        - java -jar /opt/corda/bin/corda.jar
         env:
         - name: CORDA_ARGS
           value: initial-registration  --network-root-truststore certificates/truststore.jks
-            --network-root-truststore-password trustpass
+            --network-root-truststore-password trust-store-password
         - name: CONFIG_FOLDER
           value: /opt/corda
         - name: DOORMAN_URL
