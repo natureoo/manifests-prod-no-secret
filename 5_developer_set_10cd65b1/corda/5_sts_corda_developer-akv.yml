@@ -56,11 +56,13 @@ spec:
         command:
         - /bin/bash
         - -c
-        - cat /tmp/truststore/network-root-truststore-base64.jks | base64 -d > /tmp/truststore/network-root-truststore.jks
+        - cat /tmp/truststore/network-root-truststore-base64.jks | base64 -d > /opt/corda/certificates/network-root-truststore.jks
         volumeMounts:
         - mountPath: /tmp/truststore/network-root-truststore-base64.jks
           name: corda-config
           subPath: network-root-truststore-base64.jks
+        - mountPath: /opt/corda/certificates/
+          name: certificates
         - mountPath: /tmp/truststore/
           name: temp-corda-certificates
       - name: corda-init-reg
