@@ -68,10 +68,14 @@ spec:
         imagePullPolicy: Always
         command:
         - /bin/bash
-        - -c
+        - -ec
+        - sleep 1000
 #        - cd /opt/init-reg-scripts/ && ./corda_init_reg.sh 10cd65b1 10009 && ./gen_rpccerts.sh
 #          10cd65b1 dummpypw dummpypw
-        - java -jar /opt/corda/bin/corda.jar
+#        - java -jar /opt/corda/bin/corda.jar
+#        - /bin/sh\
+
+
         env:
         - name: CORDA_ARGS
           value: initial-registration  --network-root-truststore certificates/network-root-truststore.jks
