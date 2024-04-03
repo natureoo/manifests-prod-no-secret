@@ -56,11 +56,11 @@ spec:
         command:
         - /bin/bash
         - -c
-        - cat /tmp/truststore/truststore-base64.jks | base64 -d > /tmp/truststore/truststore.jks
+        - cat /tmp/truststore/network-root-truststore-base64.jks | base64 -d > /tmp/truststore/network-root-truststore.jks
         volumeMounts:
-        - mountPath: /tmp/truststore/truststore-base64.jks
+        - mountPath: /tmp/truststore/network-root-truststore-base64.jks
           name: corda-config
-          subPath: truststore-jks
+          subPath: network-root-truststore-base64.jks
         - mountPath: /tmp/truststore/
           name: temp-corda-certificates
       - name: corda-init-reg
@@ -183,8 +183,8 @@ spec:
           items:
             - key: developer-node-conf
               path: developer-node-conf
-            - key: truststore-jks
-              path: truststore-jks
+            - key: network-root-truststore-jks
+              path: network-root-truststore-jks
       - name: init-reg-scripts
         configMap:
           name: corda-init-reg-scripts
