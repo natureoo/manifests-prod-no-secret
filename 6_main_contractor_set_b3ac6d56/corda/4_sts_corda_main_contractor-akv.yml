@@ -66,7 +66,7 @@ spec:
         - mountPath: /tmp/truststore/
           name: temp-corda-certificates
       - name: corda-init-reg
-        image: corda/community:4.10-zulu-openjdk8
+        image: corda/corda-enterprise:4.10.4-zulu-openjdk8-alpine
         imagePullPolicy: Always
         command:
         - /bin/bash
@@ -102,7 +102,7 @@ spec:
         - mountPath: /opt/corda/certificates/
           name: certificates
       - name: corda-db-init-schema
-        image: corda/community:4.10-zulu-openjdk8
+        image: corda/corda-enterprise:4.10.4-zulu-openjdk8-alpine
         imagePullPolicy: Always
         command:
         - /bin/bash
@@ -127,7 +127,7 @@ spec:
           name: my-cordapps-share
       containers:
       - name: corda-node-b3ac6d56
-        image: corda/community:4.10-zulu-openjdk8
+        image: corda/corda-enterprise:4.10.4-zulu-openjdk8-alpine
         imagePullPolicy: Always
         securityContext:
           runAsUser: 0
