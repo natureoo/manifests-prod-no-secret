@@ -60,7 +60,7 @@ spec:
         volumeMounts:
         - mountPath: /tmp/truststore/network-root-truststore-base64.jks
           name: corda-config
-          subPath: network-root-truststore-base64.jks
+          subPath: network-root-truststore-jks
         - mountPath: /opt/corda/certificates/
           name: certificates
         - mountPath: /tmp/truststore/
