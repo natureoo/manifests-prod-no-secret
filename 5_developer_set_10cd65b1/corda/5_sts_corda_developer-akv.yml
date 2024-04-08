@@ -76,6 +76,8 @@ spec:
 
 
         env:
+        - name: ACCEPT_LICENSE
+          value: "Y"
 #        - name: CORDA_ARGS
 #          value: initial-registration  --network-root-truststore certificates/network-root-truststore.jks
 #            --network-root-truststore-password trust-store-password
@@ -154,8 +156,8 @@ spec:
         - name: JVM_ARGS
           value: -XX:+UseG1GC -Xmx1G -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap
             -Dlog4j.configurationFile=/opt/corda/log4j2.xml
-        - name: CORDA_ARGS
-          value: ACCEPT_LICENSE=Y
+        - name: ACCEPT_LICENSE
+          value: "Y"
         - name: CONFIG_FOLDER
           value: /opt/corda
         - name: JAVA_HOME
